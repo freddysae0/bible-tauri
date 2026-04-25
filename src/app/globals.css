@@ -1,0 +1,165 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Lora:ital,wght@0,400;0,500;1,400&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+.font-reading {
+  font-family: 'Lora', Georgia, Cambria, 'Times New Roman', serif;
+}
+
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --bg-primary:     #0f1115;
+  --bg-secondary:   #151922;
+  --bg-tertiary:    #1c212c;
+  --text-primary:   #e6e9ef;
+  --text-secondary: #a0a6b3;
+  --text-muted:     #6b7280;
+  --border-subtle:  #262b36;
+  --border-hover:   #3a4050;
+  --accent:         #c8a96a;
+  --fav:            #e06c75;
+  --scrollbar:      #262b36;
+  --scrollbar-hover:#3a4050;
+}
+
+html[data-theme="light"] {
+  color-scheme: light;
+  --bg-primary:     #f5f7fa;
+  --bg-secondary:   #ffffff;
+  --bg-tertiary:    #edf0f5;
+  --text-primary:   #111111;
+  --text-secondary: #4a5568;
+  --text-muted:     #8a94a6;
+  --border-subtle:  #dde1ea;
+  --border-hover:   #c5cad6;
+  --accent:         #b8943a;
+  --fav:            #c94050;
+  --scrollbar:      #dde1ea;
+  --scrollbar-hover:#c5cad6;
+}
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 13px;
+  line-height: 20px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Bookmark burst & aura ──────────────────────────────────────────────── */
+
+/*
+ * Flow mode (inline spans): background-color only — box-shadow on inline
+ * elements creates visible per-line rectangles which look wrong.
+ */
+@keyframes verse-burst-flow {
+  0%   { background-color: rgba(224, 108, 117, 0.48); }
+  55%  { background-color: rgba(224, 108, 117, 0.18); }
+  100% { background-color: rgba(224, 108, 117, 0.07); }
+}
+@keyframes verse-aura-flow {
+  0%, 100% { background-color: rgba(224, 108, 117, 0.07); }
+  50%       { background-color: rgba(224, 108, 117, 0.16); }
+}
+
+html[data-theme="light"] .verse-burst-flow {
+  animation-name: verse-burst-flow-light;
+}
+html[data-theme="light"] .verse-aura-pulse-flow {
+  animation-name: verse-aura-flow-light;
+}
+@keyframes verse-burst-flow-light {
+  0%   { background-color: rgba(201, 64, 80, 0.38); }
+  55%  { background-color: rgba(201, 64, 80, 0.14); }
+  100% { background-color: rgba(201, 64, 80, 0.06); }
+}
+@keyframes verse-aura-flow-light {
+  0%, 100% { background-color: rgba(201, 64, 80, 0.06); }
+  50%       { background-color: rgba(201, 64, 80, 0.13); }
+}
+
+.verse-burst-flow {
+  animation: verse-burst-flow 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.verse-aura-pulse-flow {
+  animation: verse-aura-flow 2.6s ease-in-out infinite;
+}
+
+/*
+ * Verse mode (block divs): box-shadow is fine and looks great.
+ */
+@keyframes verse-burst-block {
+  0% {
+    box-shadow: 0 0 0 0 rgba(224, 108, 117, 1), 0 0 0 0 rgba(224, 108, 117, 0.55), 0 0 0 0 rgba(224, 108, 117, 0.25);
+  }
+  45% {
+    box-shadow: 0 0 20px 10px rgba(224, 108, 117, 0.6), 0 0 42px 22px rgba(224, 108, 117, 0.28), 0 0 68px 34px rgba(224, 108, 117, 0.12);
+  }
+  100% {
+    box-shadow: 0 0 12px 5px rgba(224, 108, 117, 0.26), 0 0 24px 10px rgba(224, 108, 117, 0.12), 0 0 0 0 rgba(224, 108, 117, 0);
+  }
+}
+@keyframes verse-aura-block {
+  0%, 100% { box-shadow: 0 0 10px 4px rgba(224, 108, 117, 0.2),  0 0 20px 8px  rgba(224, 108, 117, 0.09); }
+  50%       { box-shadow: 0 0 16px 8px rgba(224, 108, 117, 0.34), 0 0 32px 16px rgba(224, 108, 117, 0.16); }
+}
+
+html[data-theme="light"] .verse-burst-block  { animation-name: verse-burst-block-light; }
+html[data-theme="light"] .verse-aura-pulse-block { animation-name: verse-aura-block-light; }
+@keyframes verse-burst-block-light {
+  0%   { box-shadow: 0 0 0 0 rgba(201, 64, 80, 1), 0 0 0 0 rgba(201, 64, 80, 0.5); }
+  45%  { box-shadow: 0 0 18px 9px rgba(201, 64, 80, 0.5), 0 0 38px 20px rgba(201, 64, 80, 0.22); }
+  100% { box-shadow: 0 0 10px 4px rgba(201, 64, 80, 0.2), 0 0 20px 8px rgba(201, 64, 80, 0.09); }
+}
+@keyframes verse-aura-block-light {
+  0%, 100% { box-shadow: 0 0 8px 3px rgba(201, 64, 80, 0.16), 0 0 18px 7px rgba(201, 64, 80, 0.07); }
+  50%       { box-shadow: 0 0 14px 6px rgba(201, 64, 80, 0.28), 0 0 28px 12px rgba(201, 64, 80, 0.13); }
+}
+
+.verse-burst-block {
+  animation: verse-burst-block 0.85s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.verse-aura-pulse-block {
+  animation: verse-aura-block 2.6s ease-in-out infinite;
+}
+
+/* ── Commentary panel HTML styles ─────────────────────────────────────────── */
+.commentary-content h1 { font-size: 1.1rem; font-weight: 600; margin: 0 0 1rem; color: var(--text-primary); }
+.commentary-content h2 { font-size: 1rem; font-weight: 600; margin: 1.4rem 0 0.5rem; color: var(--text-primary); }
+.commentary-content h3 { font-size: 0.9rem; font-weight: 600; margin: 1.2rem 0 0.4rem; color: var(--accent); }
+.commentary-content h4 { font-size: 0.85rem; font-weight: 600; margin: 1rem 0 0.35rem; color: var(--text-secondary); }
+.commentary-content p  { margin: 0 0 0.75rem; }
+.commentary-content p.ew-bible-text {
+  margin: 0.5rem 0 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border-left: 2px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  border-radius: 0 4px 4px 0;
+  font-style: italic;
+}
+.commentary-content ul,
+.commentary-content ol  { margin: 0 0 0.75rem 1.25rem; }
+.commentary-content li  { margin-bottom: 0.25rem; }
+.commentary-content a   { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
+.commentary-content em  { font-style: italic; }
+.commentary-content strong { font-weight: 600; }
+.commentary-content .entry-content-wrap,
+.commentary-content .entry-content { display: contents; }
+
+::selection {
+  background-color: #c8a96a33;
+  color: var(--text-primary);
+}
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scrollbar); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-hover); }

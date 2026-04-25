@@ -1,0 +1,107 @@
+import { create } from 'zustand'
+import { friendApi } from '@/lib/friendApi'
+import type { Friend, FriendRequest } from '@/types'
+import { useNotificationStore } from './useNotificationStore'
+
+type FriendStore = {
+  friends: Friend[]
+  received: FriendRequest[]
+  sent: FriendRequest[]
+  searchResults: Friend[]
+  isSearching: boolean
+
+  load: () => Promise<void>
+  searchUsers: (q: string) => Promise<void>
+  clearSearch: () => void
+  sendRequest: (userId: number) => Promise<void>
+  acceptRequest: (friendshipId: number) => Promise<void>
+  declineRequest: (friendshipId: number) => Promise<void>
+  removeFriend: (userId: number) => Promise<void>
+}
+
+export const useFriendStore = create<FriendStore>((set) => ({
+  friends: [],
+  received: [],
+  sent: [],
+  searchResults: [],
+  isSearching: false,
+
+  load: async () => {
+    try {
+      const [friends, received, sent] = await Promise.all([
+        friendApi.friends(),
+        friendApi.received(),
+        friendApi.sent(),
+      ])
+      set({ friends, received, sent })
+    } catch {
+      // silently fail — user may not be logged in
+    }
+  },
+
+  searchUsers: async (q) => {
+    if (q.trim().length < 2) {
+      set({ searchResults: [] })
+      return
+    }
+    set({ isSearching: true })
+    try {
+      const results = await friendApi.search(q)
+      set({ searchResults: results })
+    } finally {
+      set({ isSearching: false })
+    }
+  },
+
+  clearSearch: () => set({ searchResults: [] }),
+
+  sendRequest: async (userId) => {
+    const req = await friendApi.send(userId)
+    set((s) => ({ sent: [...s.sent, req] }))
+  },
+
+  acceptRequest: async (friendshipId) => {
+    await friendApi.accept(friendshipId)
+    let requesterId: number | undefined
+    set((s) => {
+      const accepted = s.received.find((r) => r.id === friendshipId)
+      requesterId = accepted?.user?.id
+      return {
+        received: s.received.filter((r) => r.id !== friendshipId),
+        friends: accepted?.user ? [...s.friends, accepted.user] : s.friends,
+      }
+    })
+    if (requesterId !== undefined) {
+      const { notifications, markRead } = useNotificationStore.getState()
+      const notif = notifications.find(
+        (n) => n.read_at === null && Number((n.data as Record<string, unknown>).requester_id) === requesterId,
+      )
+      if (notif) markRead(notif.id)
+    }
+  },
+
+  declineRequest: async (friendshipId) => {
+    await friendApi.decline(friendshipId)
+    let requesterId: number | undefined
+    set((s) => {
+      const declined = s.received.find((r) => r.id === friendshipId)
+      requesterId = declined?.user?.id
+      return {
+        received: s.received.filter((r) => r.id !== friendshipId),
+        sent: s.sent.filter((r) => r.id !== friendshipId),
+      }
+    })
+    if (requesterId !== undefined) {
+      const { notifications, markRead } = useNotificationStore.getState()
+      const notif = notifications.find(
+        (n) => n.read_at === null && Number((n.data as Record<string, unknown>).requester_id) === requesterId,
+      )
+      if (notif) markRead(notif.id)
+    }
+  },
+
+  removeFriend: async (userId) => {
+    await friendApi.remove(userId)
+    set((s) => ({ friends: s.friends.filter((f) => f.id !== userId) }))
+  },
+}))

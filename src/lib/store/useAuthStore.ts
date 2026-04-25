@@ -1,0 +1,52 @@
+import { create } from 'zustand'
+import { api, setToken, clearToken } from '@/lib/api'
+
+interface AuthUser {
+  id: number
+  name: string
+  email: string
+}
+
+interface AuthState {
+  user: AuthUser | null
+  loading: boolean
+  login: (email: string, password: string) => Promise<void>
+  register: (name: string, email: string, password: string) => Promise<void>
+  logout: () => Promise<void>
+  init: () => Promise<void>
+}
+
+export const useAuthStore = create<AuthState>((set) => ({
+  user: null,
+  loading: true,
+
+  init: async () => {
+    const token = localStorage.getItem('verbum_token')
+    if (!token) { set({ loading: false }); return }
+    try {
+      const user = await api.get<AuthUser>('/api/user')
+      set({ user, loading: false })
+    } catch {
+      clearToken()
+      set({ loading: false })
+    }
+  },
+
+  login: async (email, password) => {
+    const { token, user } = await api.post<{ token: string; user: AuthUser }>('/api/auth/login', { email, password })
+    setToken(token)
+    set({ user })
+  },
+
+  register: async (name, email, password) => {
+    const { token, user } = await api.post<{ token: string; user: AuthUser }>('/api/auth/register', { name, email, password })
+    setToken(token)
+    set({ user })
+  },
+
+  logout: async () => {
+    await api.post('/api/auth/logout', {}).catch(() => {})
+    clearToken()
+    set({ user: null })
+  },
+}))
