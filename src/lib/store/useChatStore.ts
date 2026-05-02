@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { chatApi, type ChatMessage, type Conversation } from '@/lib/chatApi'
+import { chatApi, type ChatMessage, type Conversation, type GroupSettings } from '@/lib/chatApi'
 import { initEcho, getEcho } from '@/lib/echo'
 import i18n from '@/lib/i18n'
 import { useAuthStore } from './useAuthStore'
@@ -31,7 +31,11 @@ type ChatState = {
   startDm: (userId: number) => Promise<Conversation>
   createGroup: (name: string, userIds: number[]) => Promise<Conversation>
   addParticipants: (id: number, userIds: number[]) => Promise<void>
+  kickMember: (convId: number, userId: number) => Promise<void>
+  promoteMember: (convId: number, userId: number) => Promise<void>
+  demoteMember: (convId: number, userId: number) => Promise<void>
   leave: (id: number) => Promise<void>
+  updateGroupSettings: (id: number, settings: Partial<GroupSettings>) => Promise<void>
   reset: () => void
 }
 
@@ -319,6 +323,30 @@ export const useChatStore = create<ChatState>((set, get) => ({
     const echo = getEcho()
     if (echo) echo.leave(`conversation.${id}`)
     subscribed.delete(id)
+  },
+
+  kickMember: async (convId, userId) => {
+    const c = await chatApi.kickMember(convId, userId)
+    set((s) => ({ conversations: s.conversations.map((x) => (x.id === convId ? c : x)) }))
+  },
+
+  promoteMember: async (convId, userId) => {
+    const c = await chatApi.promoteMember(convId, userId)
+    set((s) => ({ conversations: s.conversations.map((x) => (x.id === convId ? c : x)) }))
+  },
+
+  demoteMember: async (convId, userId) => {
+    const c = await chatApi.demoteMember(convId, userId)
+    set((s) => ({ conversations: s.conversations.map((x) => (x.id === convId ? c : x)) }))
+  },
+
+  updateGroupSettings: async (id, settings) => {
+    const s = await chatApi.updateSettings(id, settings)
+    set((state) => ({
+      conversations: state.conversations.map((c) =>
+        c.id === id ? { ...c, members_can_invite: s.members_can_invite, name: s.name ?? c.name } : c,
+      ),
+    }))
   },
 
   reset: () => {

@@ -54,7 +54,7 @@ export function NewChatDialog({ open, onClose }: NewChatDialogProps) {
   const submit = async () => {
     if (busy) return
     if (mode === 'dm' && picked.length !== 1) return
-    if (mode === 'group' && picked.length < 2) return
+    if (mode === 'group' && picked.length < 1) return
 
     setBusy(true)
     try {
@@ -70,7 +70,7 @@ export function NewChatDialog({ open, onClose }: NewChatDialogProps) {
     }
   }
 
-  const canSubmit = mode === 'dm' ? picked.length === 1 : picked.length >= 2
+  const canSubmit = mode === 'dm' ? picked.length === 1 : picked.length >= 1
 
   return (
     <div
@@ -193,7 +193,7 @@ export function NewChatDialog({ open, onClose }: NewChatDialogProps) {
                 : 'bg-bg-tertiary text-text-muted cursor-not-allowed',
             )}
           >
-            {mode === 'dm' ? t('chat.startChat') : `${t('chat.createGroup')}${picked.length >= 2 ? ` (${picked.length})` : ''}`}
+            {mode === 'dm' ? t('chat.startChat') : `${t('chat.createGroup')}${picked.length >= 1 ? ` (${picked.length})` : ''}`}
           </button>
         </div>
       </div>
