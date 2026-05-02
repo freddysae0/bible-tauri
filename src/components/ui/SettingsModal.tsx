@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useUIStore, type FontSize, type Theme, type Locale } from '@/lib/store/useUIStore'
 import { useVerseStore } from '@/lib/store/useVerseStore'
 import { useAuthStore } from '@/lib/store/useAuthStore'
+import { usePushStore } from '@/lib/store/usePushStore'
 import { UserAvatar } from '@/components/auth/UserAvatar'
 import { cn } from '@/lib/cn'
 
@@ -35,6 +36,30 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
   )
 }
 
+function Toggle({ value, onChange, label }: { value: boolean; onChange: (v: boolean) => void; label: string }) {
+  return (
+    <label className="flex items-center gap-3 cursor-pointer select-none">
+      <button
+        role="switch"
+        aria-checked={value}
+        onClick={() => onChange(!value)}
+        className={cn(
+          'relative inline-flex h-5 w-9 shrink-0 rounded-full border-2 border-transparent transition-colors',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50',
+          value ? 'bg-accent' : 'bg-bg-tertiary border-border-subtle',
+        )}
+      >
+        <span
+          className={cn(
+            'pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow transition-transform',
+            value ? 'translate-x-4' : 'translate-x-0',
+          )}
+        />
+      </button>
+      <span className="text-sm text-text-secondary">{label}</span>
+    </label>
+  )
+}
 function SunIcon() {
   return (
     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" className="w-3.5 h-3.5">
@@ -72,9 +97,24 @@ export function SettingsModal() {
   const user   = useAuthStore(s => s.user)
   const logout = useAuthStore(s => s.logout)
 
+  const pushSupported  = usePushStore(s => s.isSupported)
+  const pushPermission = usePushStore(s => s.permission)
+  const pushToken      = usePushStore(s => s.token)
+  const isRequesting   = usePushStore(s => s.isRequesting)
+  const pushPrefs      = usePushStore(s => s.preferences)
+  const prefsLoaded    = usePushStore(s => s.preferencesLoaded)
+  const startPush      = usePushStore(s => s.requestPermission)
+  const stopPush       = usePushStore(s => s.disablePush)
+  const loadPrefs      = usePushStore(s => s.loadPreferences)
+  const updatePrefs    = usePushStore(s => s.updatePreferences)
+
   useEffect(() => {
     if (settingsOpen && versions.length === 0) loadVersions()
   }, [settingsOpen])
+
+  useEffect(() => {
+    if (settingsOpen && user && !prefsLoaded) loadPrefs()
+  }, [settingsOpen, user])
 
   if (!settingsOpen) return null
 
@@ -200,6 +240,50 @@ export function SettingsModal() {
               </select>
             </Row>
           </Section>
+
+          {/* Push notifications */}
+          {user && pushSupported && (
+            <Section title={t('settings.notifications')}>
+              <Row label={t('settings.push.enable')}>
+                {pushToken ? (
+                  <button
+                    onClick={stopPush}
+                    className="text-xs text-red-400 hover:text-red-300 transition-colors"
+                  >
+                    {t('settings.push.disable')}
+                  </button>
+                ) : (
+                  <button
+                    onClick={startPush}
+                    disabled={isRequesting}
+                    className={cn(
+                      'text-xs font-medium transition-colors',
+                      isRequesting ? 'text-text-muted cursor-wait' : 'text-accent hover:text-accent/80',
+                    )}
+                  >
+                    {isRequesting ? t('common.loading') : t('settings.push.enable')}
+                  </button>
+                )}
+              </Row>
+
+              {pushPermission === 'denied' && (
+                <div className="px-5 py-2">
+                  <p className="text-xs text-text-muted">{t('settings.push.denied')}</p>
+                </div>
+              )}
+
+              {pushToken && prefsLoaded && (
+                <div className="flex flex-col gap-2 px-5 py-2">
+                  <Toggle value={pushPrefs.chat_message} onChange={v => updatePrefs({ chat_message: v })} label={t('settings.push.chatMessage')} />
+                  <Toggle value={pushPrefs.note_reply} onChange={v => updatePrefs({ note_reply: v })} label={t('settings.push.noteReply')} />
+                  <Toggle value={pushPrefs.note_like} onChange={v => updatePrefs({ note_like: v })} label={t('settings.push.noteLike')} />
+                  <Toggle value={pushPrefs.friend_request} onChange={v => updatePrefs({ friend_request: v })} label={t('settings.push.friendRequest')} />
+                  <Toggle value={pushPrefs.friend_accepted} onChange={v => updatePrefs({ friend_accepted: v })} label={t('settings.push.friendAccepted')} />
+                  <Toggle value={pushPrefs.activity_in_chapter} onChange={v => updatePrefs({ activity_in_chapter: v })} label={t('settings.push.activityInChapter')} />
+                </div>
+              )}
+            </Section>
+          )}
 
           {/* Account actions */}
           {user && (

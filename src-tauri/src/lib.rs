@@ -5,7 +5,9 @@ pub fn run() {
     .plugin(tauri_plugin_process::init());
 
   #[cfg(any(target_os = "macos", windows, target_os = "linux"))]
-  let builder = builder.plugin(tauri_plugin_updater::Builder::new().build());
+  let builder = builder
+    .plugin(tauri_plugin_updater::Builder::new().build())
+    .plugin(tauri_plugin_notification::init());
 
   builder
     .setup(|app| {

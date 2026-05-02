@@ -23,6 +23,7 @@ import { useAuthStore } from '@/lib/store/useAuthStore'
 import { useBookmarkStore } from '@/lib/store/useBookmarkStore'
 import { useFriendStore } from '@/lib/store/useFriendStore'
 import { useChatStore } from '@/lib/store/useChatStore'
+import { usePushStore, initPushForegroundListener } from '@/lib/store/usePushStore'
 import { checkForAppUpdates } from '@/lib/updater'
 
 const VISITED_STORAGE_KEY = 'verbum_has_visited'
@@ -54,12 +55,14 @@ export default function App() {
   const listenForChatUpdates = useChatStore(s => s.listenForUpdates)
   const stopChatUpdates = useChatStore(s => s.stopListeningForUpdates)
   const addToast = useUIStore(s => s.addToast)
+  const pushCheckSupport = usePushStore(s => s.checkSupport)
 
   useEffect(() => {
     void (async () => {
       await authInit()
       await loadBooks()
     })()
+    pushCheckSupport()
   }, [authInit, loadBooks])
 
   // Detect reset-password params from email link
@@ -119,8 +122,11 @@ export default function App() {
     loadChat()
     listenForChatUpdates(user.id)
 
+    const pushUnsub = initPushForegroundListener()
+
     return () => {
       stopChatUpdates()
+      pushUnsub()
     }
   }, [user, loadBookmarks, loadFriends, loadChat, resetChat, listenForChatUpdates, stopChatUpdates])
 
