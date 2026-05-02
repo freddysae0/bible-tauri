@@ -39,7 +39,10 @@ export const useNoteStore = create<NoteState>((set, get) => ({
         loading: { ...s.loading, [verseApiId]: false },
       }))
     } catch {
-      set(s => ({ loading: { ...s.loading, [verseApiId]: false } }))
+      set(s => ({
+        notes: { ...s.notes, [verseApiId]: s.notes[verseApiId] ?? [] },
+        loading: { ...s.loading, [verseApiId]: false },
+      }))
     }
   },
 
