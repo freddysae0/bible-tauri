@@ -1,4 +1,4 @@
-package space.harbour.tulia_study
+package study.tuliabible
 
 import android.util.Log
 import com.google.firebase.messaging.FirebaseMessagingService

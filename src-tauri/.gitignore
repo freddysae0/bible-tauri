@@ -21,13 +21,11 @@
 !/gen/android/app/src/main/AndroidManifest.xml
 !/gen/android/app/src/main/java/
 /gen/android/app/src/main/java/*
-!/gen/android/app/src/main/java/space/
-/gen/android/app/src/main/java/space/*
-!/gen/android/app/src/main/java/space/harbour/
-/gen/android/app/src/main/java/space/harbour/*
-!/gen/android/app/src/main/java/space/harbour/tulia_study/
-/gen/android/app/src/main/java/space/harbour/tulia_study/*
-!/gen/android/app/src/main/java/space/harbour/tulia_study/PushMessagingService.kt
+!/gen/android/app/src/main/java/study/
+/gen/android/app/src/main/java/study/*
+!/gen/android/app/src/main/java/study/tuliabible/
+/gen/android/app/src/main/java/study/tuliabible/*
+!/gen/android/app/src/main/java/study/tuliabible/PushMessagingService.kt
 
 # Never commit Firebase service account / Google services JSON.
 /gen/android/app/google-services.json

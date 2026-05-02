@@ -19,7 +19,7 @@ Ya están commiteados:
 - `src-tauri/gen/android/app/src/main/AndroidManifest.xml` — permiso
   `POST_NOTIFICATIONS`, registro del `PushMessagingService`, y meta-data
   del canal por defecto.
-- `src-tauri/gen/android/app/src/main/java/space/harbour/tulia_study/PushMessagingService.kt`
+- `src-tauri/gen/android/app/src/main/java/study/tuliabible/PushMessagingService.kt`
   — extiende `FirebaseMessagingService`, persiste el token en
   `Context.filesDir/fcm_token.txt`.
 - `src-tauri/src/lib.rs` — comando `get_push_token` que lee ese archivo
@@ -39,7 +39,7 @@ Ya están commiteados:
 
 1. Abre el proyecto **`tulia-push`** en Firebase Console.
 2. Settings → "Add app" → **Android**.
-3. Package name: **`space.harbour.tulia_study`** (debe coincidir con
+3. Package name: **`study.tuliabible`** (debe coincidir con
    `applicationId` del Gradle).
 4. Nickname libre (ej. "Tulia Android").
 5. (Opcional) SHA-1 del keystore — sólo necesario si usas Firebase Auth
