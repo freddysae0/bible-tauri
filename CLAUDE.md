@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What This Is
 
-**tulia.study** — a collaborative Bible study desktop app. Stack: React + Vite + TypeScript + Tailwind + Zustand, packaged as a Tauri 2 desktop binary. The backend is a separate Laravel 13 API (`~/Documents/Repos/bible`) served from `https://bible.tulia.study` via Contabo VPS.
+**tulia.study** — a collaborative Bible study desktop app. Stack: React + Vite + TypeScript + Tailwind + Zustand, packaged as a Tauri 2 desktop binary. The backend is a separate Laravel 13 API (`~/Documents/Repos/bible`) served from `https://tulia.bible` via Contabo VPS.
 
 ## Commands
 
@@ -73,7 +73,7 @@ No router library — navigation is state-driven. Verse IDs use the slug format 
 
 ### Backend (verbum)
 
-`VITE_API_URL` in `.env.local` points to the verbum Laravel API (default `https://verbum.test`). CORS is configured in verbum to allow `localhost:1420` and `tauri://localhost`.
+`VITE_API_URL` in `.env.local` points to the Laravel API (default `http://localhost:8080`). In production it's `https://tulia.bible`. CORS is configured in the backend to allow `localhost:1420` and `tauri://localhost`.
 
 Key API shape:
 - Auth: `POST /api/auth/login`, `POST /api/auth/register`, `POST /api/auth/logout`
