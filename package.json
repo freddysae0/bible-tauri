@@ -11,6 +11,7 @@
     "tauri:build": "tauri build",
     "tauri:android:build": "tauri android build && node scripts/rename-android-build.mjs",
     "deploy": "pnpm build && firebase deploy --only hosting",
+    "deploy:firebase": "pnpm build && firebase deploy --only hosting",
     "test": "vitest run",
     "test:watch": "vitest"
   },
