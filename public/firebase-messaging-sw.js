@@ -2,10 +2,10 @@ importScripts('https://www.gstatic.com/firebasejs/11.5.0/firebase-app-compat.js'
 importScripts('https://www.gstatic.com/firebasejs/11.5.0/firebase-messaging-compat.js');
 
 firebase.initializeApp({
-  apiKey: 'AIzaSyDummyKey-replace-with-real',
+  apiKey: 'AIzaSyB7MYegXC6jIs2EUK6P6hwmiwqKubxVKQA',
   projectId: 'tulia-push',
-  messagingSenderId: '000000000000',
-  appId: '1:000000000000:web:0000000000000000000000',
+  messagingSenderId: '205932758475',
+  appId: '1:205932758475:web:1aee48ce62a48ca130e24e',
 });
 
 const messaging = firebase.messaging();
