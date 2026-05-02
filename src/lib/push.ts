@@ -60,6 +60,8 @@ export function detectPlatform(): PushPlatform {
 }
 
 export function isSupported(): boolean {
+  // Tauri Android takes the native FCM path so the Web Push APIs are not required.
+  if (detectPlatform() === 'android') return true;
   return (
     typeof window !== 'undefined' &&
     'Notification' in window &&
@@ -112,7 +114,55 @@ export interface RegisterFailure {
   reason: PushError;
 }
 
+async function requestAndRegisterAndroid(): Promise<RegisterResult | RegisterFailure> {
+  // Permission via the Tauri notification plugin (handles Android 13+ POST_NOTIFICATIONS).
+  try {
+    const { isPermissionGranted, requestPermission } = await import('@tauri-apps/plugin-notification');
+    let granted = await isPermissionGranted();
+    if (!granted) {
+      const r = await requestPermission();
+      granted = r === 'granted';
+    }
+    if (!granted) return { ok: false, reason: 'permission-denied' };
+  } catch {
+    return { ok: false, reason: 'unsupported' };
+  }
+
+  // The FCM token is written to disk by PushMessagingService on first run.
+  // On a cold start the service may take a few seconds to register, so retry.
+  let token: string | null = null;
+  try {
+    const { invoke } = await import('@tauri-apps/api/core');
+    for (let attempt = 0; attempt < 10; attempt++) {
+      try {
+        token = await invoke<string>('get_push_token');
+        if (token) break;
+      } catch { /* keep trying */ }
+      await new Promise((r) => setTimeout(r, 600));
+    }
+  } catch {
+    return { ok: false, reason: 'unsupported' };
+  }
+
+  if (!token) return { ok: false, reason: 'token-failed' };
+
+  try {
+    await api.post('/api/push/subscriptions', {
+      token,
+      platform: 'android',
+      device_label: navigator.userAgent.slice(0, 255),
+    });
+  } catch {
+    return { ok: false, reason: 'backend-failed' };
+  }
+
+  localStorage.setItem(TOKEN_STORAGE_KEY, token);
+  return { ok: true, token };
+}
+
 export async function requestAndRegister(): Promise<RegisterResult | RegisterFailure> {
+  if (detectPlatform() === 'android') return requestAndRegisterAndroid();
+
   if (!isSupported()) return { ok: false, reason: 'unsupported' };
 
   // iOS only allows Web Push from an installed PWA on iOS 16.4+
