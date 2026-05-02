@@ -12,7 +12,7 @@ const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage(function (payload) {
   const { notification, data } = payload;
-  const title = notification?.title || data?.title || 'Tulia Study';
+  const title = notification?.title || data?.title || 'Tulia Bible';
   const options = {
     body: notification?.body || data?.body || '',
     icon: data?.icon || '/icon-128x128.png',
