@@ -24,3 +24,4 @@ src-tauri/target/
 
 # Firebase
 .firebase/
+.DS_Store
