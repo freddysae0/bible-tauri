@@ -82,6 +82,7 @@ export function SettingsModal() {
 
   const settingsOpen  = useUIStore(s => s.settingsOpen)
   const closeSettings = useUIStore(s => s.closeSettings)
+  const addToast      = useUIStore(s => s.addToast)
   const fontSize      = useUIStore(s => s.fontSize)
   const setFontSize   = useUIStore(s => s.setFontSize)
   const theme         = useUIStore(s => s.theme)
@@ -254,7 +255,19 @@ export function SettingsModal() {
                   </button>
                 ) : (
                   <button
-                    onClick={startPush}
+                    onClick={async () => {
+                      const res = await startPush()
+                      if (res.ok) { addToast(t('settings.push.activated'), 'success'); return }
+                      const k =
+                        res.reason === 'ios-needs-pwa'      ? 'settings.push.error.iosNeedsPwa'      :
+                        res.reason === 'permission-denied'  ? 'settings.push.error.permissionDenied' :
+                        res.reason === 'unsupported'        ? 'settings.push.error.unsupported'      :
+                        res.reason === 'sw-failed'          ? 'settings.push.error.swFailed'         :
+                        res.reason === 'token-failed'       ? 'settings.push.error.tokenFailed'      :
+                        res.reason === 'backend-failed'     ? 'settings.push.error.backendFailed'    :
+                                                              'settings.push.error.generic'
+                      addToast(t(k), 'error', { duration: 6000 })
+                    }}
                     disabled={isRequesting}
                     className={cn(
                       'text-xs font-medium transition-colors',

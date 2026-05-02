@@ -30,7 +30,7 @@ interface PushState {
   preferencesLoaded: boolean;
 
   checkSupport: () => void;
-  requestPermission: () => Promise<void>;
+  requestPermission: () => Promise<{ ok: boolean; reason?: string }>;
   disablePush: () => Promise<void>;
   loadPreferences: () => Promise<void>;
   updatePreferences: (prefs: Partial<PushPreferences>) => Promise<void>;
@@ -61,20 +61,22 @@ export const usePushStore = create<PushState>((set, get) => ({
   },
 
   requestPermission: async () => {
+    if (get().isRequesting) return { ok: false, reason: 'busy' };
     set({ isRequesting: true });
     try {
       const result = await requestAndRegister();
-      if (result) {
-        set({
-          token: result.token,
-          permission: 'granted',
-          isRequesting: false,
-        });
-      } else {
-        set({ isRequesting: false });
+      if (result.ok) {
+        set({ token: result.token, permission: 'granted', isRequesting: false });
+        return { ok: true };
       }
+      set({
+        isRequesting: false,
+        permission: result.reason === 'permission-denied' ? 'denied' : get().permission,
+      });
+      return { ok: false, reason: result.reason };
     } catch {
       set({ isRequesting: false });
+      return { ok: false, reason: 'unknown' };
     }
   },
 

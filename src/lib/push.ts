@@ -74,53 +74,95 @@ export function getPermission(): NotificationPermission {
 }
 
 async function getSwRegistration(): Promise<ServiceWorkerRegistration | null> {
-  if (swRegistration) return swRegistration;
+  if (swRegistration?.active) return swRegistration;
 
   try {
-    swRegistration = await navigator.serviceWorker.getRegistration('/firebase-messaging-sw.js');
-    if (!swRegistration) {
-      swRegistration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+    let reg = await navigator.serviceWorker.getRegistration('/firebase-messaging-sw.js');
+    if (!reg) {
+      reg = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
     }
-    return swRegistration;
+    // Wait until the SW is actually controlling the page; otherwise getToken
+    // can race against an installing worker and silently return null.
+    if (!reg.active) {
+      await navigator.serviceWorker.ready;
+      reg = (await navigator.serviceWorker.getRegistration('/firebase-messaging-sw.js')) ?? reg;
+    }
+    swRegistration = reg;
+    return reg;
   } catch {
     return null;
   }
 }
 
-export async function requestAndRegister(): Promise<{ token: string } | null> {
-  if (!isSupported()) return null;
+export type PushError =
+  | 'unsupported'
+  | 'ios-needs-pwa'
+  | 'permission-denied'
+  | 'permission-default'
+  | 'sw-failed'
+  | 'token-failed'
+  | 'backend-failed';
 
-  const perm = await Notification.requestPermission();
-  if (perm !== 'granted') return null;
+export interface RegisterResult {
+  ok: true;
+  token: string;
+}
+export interface RegisterFailure {
+  ok: false;
+  reason: PushError;
+}
+
+export async function requestAndRegister(): Promise<RegisterResult | RegisterFailure> {
+  if (!isSupported()) return { ok: false, reason: 'unsupported' };
+
+  // iOS only allows Web Push from an installed PWA on iOS 16.4+
+  const ua = navigator.userAgent;
+  const isIos = /iPhone|iPad|iPod/.test(ua);
+  const isStandalone =
+    (window.matchMedia('(display-mode: standalone)').matches) ||
+    (navigator as unknown as { standalone?: boolean }).standalone === true;
+  if (isIos && !isStandalone) {
+    return { ok: false, reason: 'ios-needs-pwa' };
+  }
+
+  let perm: NotificationPermission;
+  try {
+    perm = await Notification.requestPermission();
+  } catch {
+    return { ok: false, reason: 'permission-denied' };
+  }
+  if (perm === 'denied')  return { ok: false, reason: 'permission-denied' };
+  if (perm !== 'granted') return { ok: false, reason: 'permission-default' };
 
   const fcm = getFcmMessaging();
-  if (!fcm) return null;
+  if (!fcm) return { ok: false, reason: 'unsupported' };
 
+  const swReg = await getSwRegistration();
+  if (!swReg) return { ok: false, reason: 'sw-failed' };
+
+  let token: string | null = null;
   try {
-    const swReg = await getSwRegistration();
-    if (!swReg) return null;
-
-    const token = await getToken(fcm, {
+    token = await getToken(fcm, {
       vapidKey: VAPID_KEY,
       serviceWorkerRegistration: swReg,
     });
+  } catch {
+    return { ok: false, reason: 'token-failed' };
+  }
+  if (!token) return { ok: false, reason: 'token-failed' };
 
-    if (!token) return null;
-
-    const platform = detectPlatform();
-
+  try {
     await api.post('/api/push/subscriptions', {
       token,
-      platform,
+      platform: detectPlatform(),
       device_label: navigator.userAgent.slice(0, 255),
     });
-
-    localStorage.setItem(TOKEN_STORAGE_KEY, token);
-
-    return { token };
   } catch {
-    return null;
+    return { ok: false, reason: 'backend-failed' };
   }
+
+  localStorage.setItem(TOKEN_STORAGE_KEY, token);
+  return { ok: true, token };
 }
 
 export async function unregister(): Promise<void> {

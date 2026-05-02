@@ -22,15 +22,33 @@ export function ChatPanel() {
     localStorage.getItem(PUSH_BANNER_DISMISSED_KEY) === 'true'
   )
 
-  const pushSupported  = usePushStore(s => s.isSupported)
   const pushToken      = usePushStore(s => s.token)
+  const isRequesting   = usePushStore(s => s.isRequesting)
   const requestPush    = usePushStore(s => s.requestPermission)
+  const addToast       = useUIStore(s => s.addToast)
 
   const showBanner = !pushToken && !bannerDismissed
 
   const dismissBanner = () => {
     localStorage.setItem(PUSH_BANNER_DISMISSED_KEY, 'true')
     setBannerDismissed(true)
+  }
+
+  const handleActivate = async () => {
+    const res = await requestPush()
+    if (res.ok) {
+      addToast(t('settings.push.activated'), 'success')
+      return
+    }
+    const msgKey =
+      res.reason === 'ios-needs-pwa'      ? 'settings.push.error.iosNeedsPwa'      :
+      res.reason === 'permission-denied'  ? 'settings.push.error.permissionDenied' :
+      res.reason === 'unsupported'        ? 'settings.push.error.unsupported'      :
+      res.reason === 'sw-failed'          ? 'settings.push.error.swFailed'         :
+      res.reason === 'token-failed'       ? 'settings.push.error.tokenFailed'      :
+      res.reason === 'backend-failed'     ? 'settings.push.error.backendFailed'    :
+                                            'settings.push.error.generic'
+    addToast(t(msgKey), 'error', { duration: 6000 })
   }
 
   useEffect(() => { load() }, [load])
@@ -44,10 +62,11 @@ export function ChatPanel() {
           <span className="text-xs text-text-secondary">{t('settings.push.banner')}</span>
           <div className="flex items-center gap-1 shrink-0">
             <button
-              onClick={requestPush}
-              className="text-xs font-medium text-accent hover:text-accent/80 transition-colors"
+              onClick={handleActivate}
+              disabled={isRequesting}
+              className="text-xs font-medium text-accent hover:text-accent/80 transition-colors disabled:opacity-50 disabled:cursor-wait"
             >
-              {t('settings.push.banner.activate')}
+              {isRequesting ? t('common.loading') : t('settings.push.banner.activate')}
             </button>
             <button
               onClick={dismissBanner}
