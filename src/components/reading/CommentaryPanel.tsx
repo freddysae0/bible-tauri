@@ -17,7 +17,7 @@ export function CommentaryPanel() {
   const contentRef = useRef<HTMLDivElement>(null)
 
   const { t } = useTranslation()
-  const bookName = books.find((b) => b.slug === selectedBook)?.name ?? selectedBook
+  const bookName = books.find((b) => b.slug === selectedBook)?.name ?? ''
 
   useEffect(() => {
     if (!selectedBook || !selectedChapter) return

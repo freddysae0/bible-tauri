@@ -14,7 +14,7 @@ export function BreadcrumbBar() {
   const others          = usePresenceStore((s) => s.others)
 
   const book     = books.find((b) => b.id === selectedBook)
-  const bookName = book?.name ?? selectedBook
+  const bookName = book?.name ?? ''
 
   return (
     <div className="flex items-center gap-1.5 px-4 py-2 border-b border-border-subtle bg-bg-secondary">

@@ -75,10 +75,12 @@ export const useVerseStore = create<VerseState>((set, get) => ({
     try {
       const versions = await bibleApi.versions()
       const storedVersionId = getStoredBibleVersionId()
-      set({
-        versions,
-        versionId: storedVersionId ?? selectDefaultBibleVersionId(versions, getBrowserLanguage(), get().versionId),
-      })
+      const previousVersionId = get().versionId
+      const newVersionId = storedVersionId ?? selectDefaultBibleVersionId(versions, getBrowserLanguage(), previousVersionId)
+      set({ versions, versionId: newVersionId })
+      if (newVersionId !== previousVersionId) {
+        await get().loadBooks()
+      }
     } catch (e) {
       console.error('Failed to load versions', e)
     }
@@ -102,7 +104,7 @@ export const useVerseStore = create<VerseState>((set, get) => ({
         set({ versions, versionId })
       }
 
-      const apiBooks: ApiBook[] = await bibleApi.books(versionId)
+      const apiBooks: ApiBook[] = await bibleApi.books(get().versionId)
       const books: Book[] = apiBooks.map(b => ({
         id: b.slug,
         number: b.number,

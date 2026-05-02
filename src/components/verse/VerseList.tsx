@@ -200,7 +200,7 @@ export function VerseList() {
     return () => leaveChapter()
   }, [user?.id, books, selectedBook, selectedChapter, friendIds, joinChapter, leaveChapter])
 
-  const bookName    = books.find((b) => b.slug === selectedBook)?.name ?? selectedBook
+  const bookName    = books.find((b) => b.slug === selectedBook)?.name ?? ''
   const currentBook = books.find((b) => b.slug === selectedBook)
   const bookIdx     = books.findIndex((b) => b.slug === selectedBook)
   const prevDisabled = loadingVerses || (selectedChapter === 1 && bookIdx === 0)
@@ -429,26 +429,30 @@ export function VerseList() {
                   disabled={prevDisabled}
                   aria-label={t('verse.previousChapter')}
                   className={cn(
-                    'h-9 min-w-9 rounded-md border px-2 text-xs transition-colors',
+                    'h-9 w-9 rounded-md border flex items-center justify-center transition-colors',
                     prevDisabled
                       ? 'opacity-40 border-border-subtle text-text-muted'
-                      : 'border-border-subtle bg-bg-tertiary text-text-secondary',
+                      : 'border-border-subtle bg-bg-tertiary text-accent/70 hover:text-accent hover:border-accent/40 hover:bg-bg-tertiary active:scale-95',
                   )}
                 >
-                  {t('verse.prev')}
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M7.5 2L3.5 6L7.5 10" />
+                  </svg>
                 </button>
                 <button
                   onClick={() => navigateChapter('next')}
                   disabled={nextDisabled}
                   aria-label={t('verse.nextChapter')}
                   className={cn(
-                    'h-9 min-w-9 rounded-md border px-2 text-xs transition-colors',
+                    'h-9 w-9 rounded-md border flex items-center justify-center transition-colors',
                     nextDisabled
                       ? 'opacity-40 border-border-subtle text-text-muted'
-                      : 'border-border-subtle bg-bg-tertiary text-text-secondary',
+                      : 'border-border-subtle bg-bg-tertiary text-accent/70 hover:text-accent hover:border-accent/40 hover:bg-bg-tertiary active:scale-95',
                   )}
                 >
-                  {t('verse.next')}
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M4.5 2L8.5 6L4.5 10" />
+                  </svg>
                 </button>
               </div>
               <div className="flex gap-2 items-center">
