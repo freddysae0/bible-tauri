@@ -18,6 +18,7 @@ interface NoteState {
   notes: Record<number, Note[]>   // keyed by numeric verse id
   loading: Record<number, boolean>
   loadNotes: (verseApiId: number) => Promise<void>
+  loadChapterNotes: (chapterId: number) => Promise<void>
   addNote: (verseApiId: number, body: string, parentId?: number, isPublic?: boolean) => Promise<void>
   updateNote: (verseApiId: number, noteId: number, body: string) => Promise<void>
   toggleNoteVisibility: (verseApiId: number, noteId: number) => Promise<void>
@@ -29,6 +30,22 @@ interface NoteState {
 export const useNoteStore = create<NoteState>((set, get) => ({
   notes: {},
   loading: {},
+
+  loadChapterNotes: async (chapterId) => {
+    try {
+      const res = await api.get<{ verse_ids: number[]; notes: Record<string, Note[]> }>(
+        `/api/chapters/${chapterId}/notes`,
+      )
+      const grouped: Record<number, Note[]> = {}
+      for (const id of res.verse_ids) grouped[id] = []
+      for (const [verseId, list] of Object.entries(res.notes)) {
+        grouped[Number(verseId)] = list
+      }
+      set(s => ({ notes: { ...s.notes, ...grouped } }))
+    } catch {
+      // Swallow — caller falls back to per-verse loading
+    }
+  },
 
   loadNotes: async (verseApiId) => {
     set(s => ({ loading: { ...s.loading, [verseApiId]: true } }))

@@ -146,9 +146,8 @@ export function VerseList() {
   const addToast       = useUIStore((s) => s.addToast)
   const openAuthModal  = useUIStore((s) => s.openAuthModal)
 
-  const notes      = useNoteStore((s) => s.notes)
-  const notesLoading = useNoteStore((s) => s.loading)
-  const loadNotes  = useNoteStore((s) => s.loadNotes)
+  const notes            = useNoteStore((s) => s.notes)
+  const loadChapterNotes = useNoteStore((s) => s.loadChapterNotes)
   const highlights = useHighlightStore((s) => s.highlights)
   const addHighlight = useHighlightStore((s) => s.addHighlight)
   const loadHighlightsForChapter = useHighlightStore((s) => s.loadHighlightsForChapter)
@@ -177,13 +176,9 @@ export function VerseList() {
   }, [verses])
 
   useEffect(() => {
-    if (!user || !verses.length) return
-    const missingVerseIds = verses
-      .map((verse) => verse.apiId)
-      .filter((verseApiId) => notes[verseApiId] == null && !notesLoading[verseApiId])
-
-    void Promise.all(missingVerseIds.map((verseApiId) => loadNotes(verseApiId)))
-  }, [user?.id, verses, notes, notesLoading, loadNotes])
+    if (!user || !chapterId) return
+    void loadChapterNotes(chapterId)
+  }, [user?.id, chapterId, loadChapterNotes])
 
   useEffect(() => {
     if (chapterId) loadChapterRefs(chapterId)
