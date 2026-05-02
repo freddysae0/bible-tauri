@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What This Is
 
-**tulia.study** — a collaborative Bible study desktop app. Stack: React + Vite + TypeScript + Tailwind + Zustand, packaged as a Tauri 2 desktop binary. The backend is a separate Laravel 13 API (`verbum`, at `C:\Repos\verbum`) running on port 8000.
+**tulia.study** — a collaborative Bible study desktop app. Stack: React + Vite + TypeScript + Tailwind + Zustand, packaged as a Tauri 2 desktop binary. The backend is a separate Laravel 13 API (`~/Documents/Repos/bible`) served from `https://bible.tulia.study` via Contabo VPS.
 
 ## Commands
 
@@ -29,7 +29,7 @@ pnpm preview
 
 ### State & Data Flow
 
-Six Zustand stores, each owning a domain:
+14 Zustand stores, each owning a domain:
 
 | Store | Responsibility |
 |---|---|
@@ -39,6 +39,15 @@ Six Zustand stores, each owning a domain:
 | `useHighlightStore` | Highlights — **still client-side only**, no backend table yet |
 | `useBookmarkStore` | Bookmarks via `/api/verses/{id}/bookmark` |
 | `useUIStore` | Modals, panels, theme, font size, toasts |
+| `useChatStore` | Conversations, messages, WebSocket typing/read receipts via Reverb |
+| `useFriendStore` | Friend requests, friends list, user search |
+| `useNotificationStore` | In-app notifications + Reverb push listener (30s polling fallback) |
+| `usePresenceStore` | Chapter-level presence (who's reading) |
+| `useActivityStore` | Real-time verse activity (noted/highlighted) with 30s TTL |
+| `usePushStore` | FCM push notifications: token registration, permission request, notification preferences |
+| `useCrossRefStore` | Cross-references panel |
+| `useCompareStore` | Bible version comparison modal |
+| `useContextMenuStore` | Right-click context menu |
 
 API calls go through `src/lib/api.ts` (sets `Authorization: Bearer {token}` on every request). Bible-specific endpoints are in `src/lib/bibleApi.ts`.
 
@@ -72,9 +81,63 @@ Key API shape:
 - Notes: `GET|POST /api/verses/{id}/notes`, `PATCH|DELETE /api/notes/{id}`
 - Bookmarks: `POST /api/verses/{id}/bookmark`
 - Search: `GET /api/versions/{id}/search?q=`
+- Push: `POST /api/push/subscriptions`, `DELETE /api/push/subscriptions/{token}`, `GET /api/push/subscriptions`, `GET|PATCH /api/push/preferences`
+
+### Push Notifications
+
+Push notifications use **Firebase Cloud Messaging (FCM)** as the single hub. A separate Firebase project `tulia-push` isolates credentials from the main `tulia-bible` hosting project.
+
+Architecture decision: Reverb/Echo covers real-time when the user is online (foreground). FCM push fires only when the WebSocket session is not connected (offline or app closed). The backend `PushDispatcher` checks `WebSocketPresence::isOnline()` before dispatching.
+
+**Two Firebase projects:**
+| Project | Purpose |
+|---------|---------|
+| `tulia-bible` | Hosting only (`firebase deploy --only hosting`) |
+| `tulia-push` | Cloud Messaging (FCM) — where VAPID key and service account live |
+
+**Backend (`~/Documents/Repos/bible`):**
+- `push_subscriptions` table: user_id, token (unique), platform (web/android/ios/desktop), device_label
+- `notification_preferences` table: one row per user, boolean toggles per event type
+- `PushDispatcher::send(User, event, payload)` — checks preferences → checks WebSocket presence → dispatches `SendPushJob` on `push` queue
+- `SendPushJob` — 3 tries with exponential backoff, deletes invalid tokens (404/400)
+- Queues: `default,push` via Supervisor on Contabo (`/etc/supervisor/conf.d/worker-209726.conf`)
+- Credentials: `FIREBASE_CREDENTIALS=/var/www/storage/firebase-credentials.json` in `.env`
+- Package: `kreait/laravel-firebase`
+
+**Frontend (`bible-tauri`):**
+- `src/lib/push.ts` — `requestAndRegister()`, `unregister()`, `onForegroundMessage()`, `detectPlatform()`, `listenForTokenRefresh()`
+- `src/lib/store/usePushStore.ts` — Zustand store for permission state, token, preferences CRUD via API
+- `public/firebase-messaging-sw.js` — service worker for background notifications (imports Firebase compat from CDN)
+- `src/components/ui/SettingsModal.tsx` — notification preferences toggles (chat_message, note_reply, note_like, friend_request, friend_accepted, activity_in_chapter)
+- `src/components/chat/ChatPanel.tsx` — push activation banner on first chat open
+- `src/App.tsx` — initializes push foreground listener when user authenticates
+- Package: `firebase` (JS SDK)
+
+**Tauri desktop:**
+- `@tauri-apps/plugin-notification` — native OS notifications when app is open (foreground push)
+- `tauri-plugin-notification = "2"` in Cargo.toml, registered in `lib.rs`
+- Platform detection (`detectPlatform()`) uses `window.__TAURI_INTERNALS__`
+
+**Push trigger points (backend controllers):**
+| Event | Controller | Method |
+|-------|-----------|--------|
+| `chat_message` | `ConversationController` | `sendMessage` |
+| `note_reply` | `NoteController` | `store` (when parent_id set) |
+| `note_like` | `NoteController` | `like` |
+| `friend_request` | `FriendshipController` | `send` |
+| `friend_accepted` | `FriendshipController` | `accept` |
+
+**Environment variables (dev `VITE_`):**
+```
+VITE_FIREBASE_API_KEY=AIzaSyB7MYegXC6jIs2EUK6P6hwmiwqKubxVKQA
+VITE_FIREBASE_PROJECT_ID=tulia-push
+VITE_FIREBASE_MESSAGING_SENDER_ID=205932758475
+VITE_FIREBASE_APP_ID=1:205932758475:web:1aee48ce62a48ca130e24e
+VITE_FIREBASE_VAPID_PUBLIC_KEY=BFItWH6ReKCGfJ1nicQl1fcNoeHUIv9jbDnJUbcWOeAhwVgKApDS3dmcFJnbfUNpECNAtAZQEBnwMmAevHmxNDo
+```
 
 ### Current Incomplete Areas
 
-- `AuthModal` component exists but is not yet connected to `useAuthStore`
-- Highlights have no backend table — `useHighlightStore` is local-only
+- Highlights are client-side only (`useHighlightStore` is local-only)
 - `src/lib/supabase/client.ts` existe pero es código muerto — Supabase no está en el stack
+- Android/iOS push (Fases 4-5) not yet implemented — requires Tauri mobile plugins
